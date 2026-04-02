@@ -16,23 +16,24 @@
   </style>
 </head>
 <body>
-
 <div class="container">
   <h2>Admin Uang Kas</h2>
 
-  <label>Keterangan:</label>
-  <input type="text" id="keterangan" placeholder="Contoh: Iuran Bulanan">
+  <form id="kasForm">
+    <label>Keterangan:</label>
+    <input type="text" id="keterangan" placeholder="Contoh: Iuran Bulanan">
 
-  <label>Jumlah:</label>
-  <input type="number" id="jumlah" placeholder="0">
+    <label>Jumlah:</label>
+    <input type="number" id="jumlah" placeholder="0">
 
-  <label>Jenis Transaksi:</label>
-  <select id="jenis">
-    <option value="masuk">Masuk (+)</option>
-    <option value="keluar">Keluar (-)</option>
-  </select>
+    <label>Jenis Transaksi:</label>
+    <select id="jenis">
+      <option value="masuk">Masuk (+)</option>
+      <option value="keluar">Keluar (-)</option>
+    </select>
 
-  <button id="btnSimpan" onclick="prosesSimpan()">Simpan ke Cloud</button>
+    <button type="submit">Simpan ke Cloud</button>
+  </form>
 
   <div class="total" id="totalKas">Total Kas: Rp 0</div>
 
@@ -48,13 +49,13 @@
     <tbody></tbody>
   </table>
 </div>
+
 <script>
-  // Ganti dengan URL Web App dari Google Apps Script
-  const scriptURL = "https://script.google.com/macros/s/AKfycbxNlrO7aWIBdZfIixHWFaZZczSkhCRY2Eq8E0saNSPt6btmDXCFQ5PyTImqxL3J05vF/exec";
+  const scriptURL = "https://script.google.com/macros/s/AKfycbzO7kxzx2CeWWDNiRN2KPRNOwn-Mzhca1yBSz1nZRB9XEJ3gMpaKbmDPOApP6HSLd8N/exec"; // ganti dengan URL Web App
 
-  let totalKas = 0;
+  document.getElementById("kasForm").addEventListener("submit", function(e) {
+    e.preventDefault(); // cegah reload halaman
 
-  function prosesSimpan() {
     const keterangan = document.getElementById("keterangan").value;
     const jumlah = parseInt(document.getElementById("jumlah").value);
     const jenis = document.getElementById("jenis").value;
@@ -64,22 +65,6 @@
       alert("Mohon isi semua data!");
       return;
     }
-
-    // Hitung total kas
-    if (jenis === "masuk") {
-      totalKas += jumlah;
-    } else {
-      totalKas -= jumlah;
-    }
-    document.getElementById("totalKas").innerText = "Total Kas: Rp " + totalKas.toLocaleString("id-ID");
-
-    // Tambahkan ke tabel
-    const tabel = document.getElementById("tabelTransaksi").getElementsByTagName("tbody")[0];
-    const row = tabel.insertRow();
-    row.insertCell(0).innerText = tanggal;
-    row.insertCell(1).innerText = keterangan;
-    row.insertCell(2).innerText = jumlah.toLocaleString("id-ID");
-    row.insertCell(3).innerText = jenis;
 
     // Kirim ke Google Apps Script
     fetch(scriptURL, {
@@ -91,19 +76,43 @@
         jenis: jenis
       })
     })
-    .then(response => response.text())
+    .then(response => response.json())
     .then(result => {
       console.log("Data berhasil disimpan:", result);
-      alert("Data berhasil disimpan ke Cloud!");
+      loadData(); // refresh tabel setelah simpan
+      document.getElementById("kasForm").reset(); // reset form
     })
-    .catch(error => {
-      console.error("Error:", error);
-      alert("Gagal menyimpan data!");
-    });
+    .catch(error => console.error("Error:", error));
+  });
+
+  function loadData() {
+    fetch(scriptURL)
+      .then(response => response.json())
+      .then(data => {
+        const tabel = document.getElementById("tabelTransaksi").getElementsByTagName("tbody")[0];
+        tabel.innerHTML = "";
+        let totalKas = 0;
+
+        data.forEach(item => {
+          const row = tabel.insertRow();
+          row.insertCell(0).innerText = item.tanggal;
+          row.insertCell(1).innerText = item.keterangan;
+          row.insertCell(2).innerText = parseInt(item.jumlah).toLocaleString("id-ID");
+          row.insertCell(3).innerText = item.jenis;
+
+          if (item.jenis === "masuk") {
+            totalKas += parseInt(item.jumlah);
+          } else {
+            totalKas -= parseInt(item.jumlah);
+          }
+        });
+
+        document.getElementById("totalKas").innerText = "Total Kas: Rp " + totalKas.toLocaleString("id-ID");
+      })
+      .catch(error => console.error("Error load data:", error));
   }
+
+  window.onload = loadData;
 </script>
-
-
-
 </body>
 </html>
