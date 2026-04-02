@@ -43,7 +43,18 @@
   <tbody></tbody>
 </table>
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycby5wx52W0fAgqM3Rz4dnZsmTD3AjCjzeBsrW1RQxJkMociEFypcQaR_S8-iLWTJNVij/exec";
+  const scriptURL = "https://script.google.com/macros/s/AKfycby5wx52W0fAgqM3Rz4dnZsmTD3AjCjzeBsrW1RQxJkMociEFypcQaR_S8-iLWTJNVij/exec";
+
+// Password sederhana untuk admin
+const adminPassword = "Colimulu"; // ganti sesuai kebutuhan
+
+function checkAdmin() {
+  const inputPass = prompt("Masukkan password admin:");
+  if (inputPass !== adminPassword) {
+    alert("Anda bukan admin! Form input disembunyikan.");
+    document.getElementById("kasForm").style.display = "none"; // sembunyikan form
+  }
+}
 
 document.getElementById("kasForm").addEventListener("submit", function(e) {
   e.preventDefault(); // cegah reload halaman
@@ -58,7 +69,6 @@ document.getElementById("kasForm").addEventListener("submit", function(e) {
     return;
   }
 
-  // Kirim ke Google Apps Script
   fetch(scriptURL, {
     method: "POST",
     body: new URLSearchParams({
@@ -92,7 +102,6 @@ function loadData() {
         row.insertCell(2).innerText = parseInt(item.jumlah).toLocaleString("id-ID");
         row.insertCell(3).innerText = item.jenis;
 
-        // Hitung total kas
         if (item.jenis.toLowerCase() === "masuk") {
           totalKas += parseInt(item.jumlah);
         } else {
@@ -105,8 +114,11 @@ function loadData() {
     .catch(error => console.error("Error load data:", error));
 }
 
-// Panggil saat halaman pertama kali dibuka
-window.onload = loadData;
-  </script>
+// Jalankan saat halaman pertama kali dibuka
+window.onload = function() {
+  checkAdmin(); // cek admin dulu
+  loadData();   // tetap load tabel agar semua orang bisa lihat
+};
+</script>
 </body>
 </html>
