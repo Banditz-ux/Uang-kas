@@ -49,101 +49,59 @@
   </table>
 </div>
 <script>
-  const WEB_APP_URL = "‎https://script.google.com/macros/s/AKfycbyebkHaCHCMu7O63ZgtZwgjbiE7STKJWL-ElE2s6uFIJu5QDK0DVEHo0L4LUwgWKzyX/exec"; // Ganti dengan URL Anda
+  // Ganti dengan URL Web App dari Google Apps Script
+  const scriptURL = "https://script.google.com/macros/s/AKfycbxxxxxxx/exec";
+
   let totalKas = 0;
 
-  // Fungsi yang otomatis jalan saat web dibuka
-  window.onload = function() {
-    muatDataDariCloud();
-  };
-
-  function muatDataDariCloud() {
-    // Reset hitungan dan bersihkan tabel agar tidak double
-    totalKas = 0;
-    const tbody = document.querySelector("#tabelTransaksi tbody");
-    tbody.innerHTML = "<tr><td colspan='4'>Memuat data...</td></tr>";
-
-    fetch(WEB_APP_URL)
-      .then(res => res.json())
-      .then(dataLama => {
-        tbody.innerHTML = ""; // Kosongkan tulisan "memuat"
-        if (dataLama.length === 0) {
-           tbody.innerHTML = "<tr><td colspan='4'>Belum ada transaksi</td></tr>";
-        }
-        // Urutkan data jika perlu, lalu tampilkan satu per satu
-        dataLama.forEach(item => {
-          updateTabelUI(item.tanggal, item.keterangan, item.jumlah, item.jenis);
-        });
-      })
-      .catch(err => {
-        console.error("Gagal ambil data:", err);
-        tbody.innerHTML = "<tr><td colspan='4'>Gagal memuat data</td></tr>";
-      });
-  }
-
   function prosesSimpan() {
-    const btn = document.getElementById("btnSimpan");
-    const ket = document.getElementById("keterangan").value;
-    const jml = parseFloat(document.getElementById("jumlah").value);
+    const keterangan = document.getElementById("keterangan").value;
+    const jumlah = parseInt(document.getElementById("jumlah").value);
     const jenis = document.getElementById("jenis").value;
+    const tanggal = new Date().toLocaleDateString("id-ID");
 
-    if (!ket || isNaN(jml)) {
-      alert("Isi keterangan dan jumlah dengan benar!");
+    if (!keterangan || !jumlah) {
+      alert("Mohon isi semua data!");
       return;
     }
 
-    btn.disabled = true;
-    btn.innerText = "Menyimpan...";
+    // Hitung total kas
+    if (jenis === "masuk") {
+      totalKas += jumlah;
+    } else {
+      totalKas -= jumlah;
+    }
+    document.getElementById("totalKas").innerText = "Total Kas: Rp " + totalKas.toLocaleString("id-ID");
 
-    const dataObj = { keterangan: ket, jumlah: jml, jenis: jenis };
+    // Tambahkan ke tabel
+    const tabel = document.getElementById("tabelTransaksi").getElementsByTagName("tbody")[0];
+    const row = tabel.insertRow();
+    row.insertCell(0).innerText = tanggal;
+    row.insertCell(1).innerText = keterangan;
+    row.insertCell(2).innerText = jumlah.toLocaleString("id-ID");
+    row.insertCell(3).innerText = jenis;
 
-    fetch(WEB_APP_URL, {
+    // Kirim ke Google Apps Script
+    fetch(scriptURL, {
       method: "POST",
-      body: JSON.stringify(dataObj)
+      body: new URLSearchParams({
+        tanggal: tanggal,
+        keterangan: keterangan,
+        jumlah: jumlah,
+        jenis: jenis
+      })
     })
-    .then(res => res.text())
-    .then(res => {
-      alert("Data Berhasil Disimpan!");
-      resetForm();
-      btn.disabled = false;
-      btn.innerText = "Simpan ke Cloud";
-      // Muat ulang data agar perhitungan Total Kas sinkron dengan database
-      muatDataDariCloud(); 
+    .then(response => response.text())
+    .then(result => {
+      console.log("Data berhasil disimpan:", result);
+      alert("Data berhasil disimpan ke Cloud!");
     })
-    .catch(err => {
-      alert("Gagal: " + err);
-      btn.disabled = false;
+    .catch(error => {
+      console.error("Error:", error);
+      alert("Gagal menyimpan data!");
     });
   }
-
-  function updateTabelUI(tanggal, ket, jml, jenis) {
-    // Logika perhitungan matematika dasar
-    if (jenis.toLowerCase() === "masuk") {
-      totalKas += jml;
-    } else {
-      totalKas -= jml;
-    }
-
-    const tbody = document.querySelector("#tabelTransaksi tbody");
-    const row = tbody.insertRow(-1); // Tambah di baris paling bawah
-    
-    row.innerHTML = `
-      <td>${tanggal}</td>
-      <td>${ket}</td>
-      <td>Rp ${jml.toLocaleString("id-ID")}</td>
-      <td style="color: ${jenis.toLowerCase() === 'masuk' ? 'green' : 'red'}; font-weight:bold;">${jenis.toUpperCase()}</td>
-    `;
-
-    document.getElementById("totalKas").innerText = "Total Kas: Rp " + totalKas.toLocaleString("id-ID");
-  }
-
-  function resetForm() {
-    document.getElementById("keterangan").value = "";
-    document.getElementById("jumlah").value = "";
-    document.getElementById("jenis").value = "masuk";
-  }
 </script>
-
 
 
 
