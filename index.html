@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Uang Kas</title>
+</head>
+<body>
+  <h2>Admin Uang Kas</h2>
+  <form id="kasForm">
+    <label>Keterangan:</label><br>
+    <input type="text" name="keterangan"><br>
+    <label>Jumlah:</label><br>
+    <input type="number" name="jumlah"><br>
+    <label>Jenis:</label><br>
+    <select name="jenis">
+      <option value="masuk">Masuk</option>
+      <option value="keluar">Keluar</option>
+    </select><br><br>
+    <button type="submit">Simpan</button>
+  </form>
+
+  <div id="hasil"></div>
+
+  <script>
+    document.getElementById("kasForm").addEventListener("submit", function(e){
+      e.preventDefault();
+      var formData = new FormData(this);
+      fetch("https://script.google.com/macros/s/AKfycbzjoyaA41H3ZhZlFXjL-_CIu0qr9enUPmQo1JzuskqwOh7VbtDmWBrtDT4-UDNxlzTZww/exec", {
+        method: "POST",
+        body: formData
+      })
+      .then(res => res.text())
+      .then(txt => {
+        document.getElementById("hasil").innerText = txt;
+      });
+    });
+  </script>
+</body>
+</html>
