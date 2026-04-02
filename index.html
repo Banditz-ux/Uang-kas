@@ -4,30 +4,37 @@
   <meta charset="UTF-8">
   <title>Admin Uang Kas</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    input, select, button { margin: 5px 0; padding: 5px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background-color: #f2f2f2; }
-    .total { margin-top: 15px; font-weight: bold; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f7f6; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    input, select, button { width: 100%; margin: 8px 0; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+    button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:disabled { background-color: #ccc; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    th { background-color: #f8f9fa; }
+    .total { margin-top: 15px; font-weight: bold; font-size: 1.2em; color: #333; }
   </style>
 </head>
 <body>
+
+<div class="container">
   <h2>Admin Uang Kas</h2>
 
-  <label>Keterangan:</label><br>
-  <input type="text" id="keterangan"><br>
+  <label>Keterangan:</label>
+  <input type="text" id="keterangan" placeholder="Contoh: Iuran Bulanan">
 
-  <label>Jumlah:</label><br>
-  <input type="number" id="jumlah"><br>
+  <label>Jumlah:</label>
+  <input type="number" id="jumlah" placeholder="0">
 
-  <label>Jenis Transaksi:</label><br>
+  <label>Jenis Transaksi:</label>
   <select id="jenis">
-    <option value="masuk">Masuk</option>
-    <option value="keluar">Keluar</option>
-  </select><br>
+    <option value="masuk">Masuk (+)</option>
+    <option value="keluar">Keluar (-)</option>
+  </select>
 
-  <button onclick="simpan()">Simpan</button>
+  <button id="btnSimpan" onclick="kirimKeServer()">Simpan ke Cloud</button>
+
+  <div class="total" id="totalKas">Total Kas: Rp 0</div>
 
   <table id="tabelTransaksi">
     <thead>
@@ -36,68 +43,90 @@
         <th>Keterangan</th>
         <th>Jumlah</th>
         <th>Jenis</th>
-        <th>Total Kas</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
+</div>
+<script>
+  // MASUKKAN URL WEB APP GOOGLE ANDA DI SINI
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4BegZVV0KG90CZNd3rfYr-si09bdrfeU-8usipbQw4ED0q628l9cHC4grb1asvORd/exec";
+  let totalKas = 0;
 
-  <div class="total" id="totalKas">Total Kas: Rp 0</div>
-
-  <script>
-    const url = "‎https://script.google.com/macros/s/AKfycbzNUjXF6p5j6axX-4vK7I82I_ZEYeSlKarlhvzXcqqoRQdlC039LsrxZxTaOAfr5X4l/exec"; // ganti dengan URL Web App Anda
-
-    function simpan() {
-      const ket = document.getElementById("keterangan").value;
-      const jml = document.getElementById("jumlah").value;
-      const jenis = document.getElementById("jenis").value;
-
-      if (!ket || !jml) {
-        alert("Isi keterangan dan jumlah dengan benar!");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("keterangan", ket);
-      formData.append("jumlah", jml);
-      formData.append("jenis", jenis);
-
-      fetch(url, { method: "POST", body: formData })
-        .then(res => res.text())
-        .then(txt => {
-          alert(txt); // pesan sukses
-          loadData(); // refresh tabel
-          // reset form
-          document.getElementById("keterangan").value = "";
-          document.getElementById("jumlah").value = "";
-          document.getElementById("jenis").value = "masuk";
+  window.onload = function() {
+    fetch(WEB_APP_URL)
+      .then(res => res.json())
+      .then(dataLama => {
+        dataLama.forEach(item => {
+          updateTabelUI(item.tanggal, item.keterangan, item.jumlah, item.jenis);
         });
+      })
+      .catch(err => console.error("Gagal ambil data:", err));
+  };
+
+  function prosesSimpan() {
+    const btn = document.getElementById("btnSimpan");
+    const ket = document.getElementById("keterangan").value;
+    const jml = parseFloat(document.getElementById("jumlah").value);
+    const jenis = document.getElementById("jenis").value;
+    const tanggal = new Date().toLocaleDateString("id-ID");
+
+    if (!ket || isNaN(jml)) {
+      alert("Isi keterangan dan jumlah dengan benar!");
+      return;
     }
 
-    function loadData() {
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          const tbody = document.querySelector("#tabelTransaksi tbody");
-          tbody.innerHTML = "";
-          let totalKas = 0;
-          for (let i = 1; i < data.length; i++) {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-              <td>${new Date(data[i][0]).toLocaleDateString("id-ID")}</td>
-              <td>${data[i][1]}</td>
-              <td>Rp ${parseFloat(data[i][2]).toLocaleString("id-ID")}</td>
-              <td>${data[i][3]}</td>
-              <td>Rp ${parseFloat(data[i][4]).toLocaleString("id-ID")}</td>
-            `;
-            tbody.appendChild(row);
-            totalKas = data[i][4];
-          }
-          document.getElementById("totalKas").innerText = "Total Kas: Rp " + totalKas.toLocaleString("id-ID");
-        });
+    btn.disabled = true;
+    btn.innerText = "Menyimpan...";
+
+    const dataObj = { keterangan: ket, jumlah: jml, jenis: jenis };
+
+    fetch(WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify(dataObj)
+    })
+    .then(res => res.text())
+    .then(res => {
+      updateTabelUI(tanggal, ket, jml, jenis, true);
+      resetForm();
+      btn.disabled = false;
+      btn.innerText = "Simpan ke Spreadsheet";
+    })
+    .catch(err => {
+      alert("Gagal: " + err);
+      btn.disabled = false;
+      btn.innerText = "Simpan ke Spreadsheet";
+    });
+  }
+
+  function updateTabelUI(tanggal, ket, jml, jenis, insertTop = false) {
+    if (jenis === "masuk") {
+      totalKas += jml;
+    } else {
+      totalKas -= jml;
     }
 
-    window.onload = loadData;
-  </script>
+    const tbody = document.querySelector("#tabelTransaksi tbody");
+    const row = tbody.insertRow(insertTop ? 0 : -1);
+    
+    row.innerHTML = `
+      <td>${tanggal}</td>
+      <td>${ket}</td>
+      <td>Rp ${jml.toLocaleString("id-ID")}</td>
+      <td style="color: ${jenis === 'masuk' ? 'green' : 'red'}; font-weight:bold;">${jenis.toUpperCase()}</td>
+    `;
+
+    document.getElementById("totalKas").innerText = "Total Kas: Rp " + totalKas.toLocaleString("id-ID");
+  }
+
+  function resetForm() {
+    document.getElementById("keterangan").value = "";
+    document.getElementById("jumlah").value = "";
+    document.getElementById("jenis").value = "masuk";
+  }
+</script>
+
+
+
 </body>
 </html>
