@@ -20,99 +20,93 @@
   <h2>Admin Uang Kas</h2>
 
   <form id="kasForm">
-    <label>Keterangan:</label>
-    <input type="text" id="keterangan" placeholder="Contoh: Iuran Bulanan">
+  <input id="keterangan" type="text" placeholder="Keterangan">
+  <input id="jumlah" type="number" placeholder="Jumlah">
+  <select id="jenis">
+    <option value="masuk">Masuk (+)</option>
+    <option value="keluar">Keluar (-)</option>
+  </select>
+  <button type="submit">Simpan ke Cloud</button>
+</form>
 
-    <label>Jumlah:</label>
-    <input type="number" id="jumlah" placeholder="0">
+<div id="totalKas"></div>
 
-    <label>Jenis Transaksi:</label>
-    <select id="jenis">
-      <option value="masuk">Masuk (+)</option>
-      <option value="keluar">Keluar (-)</option>
-    </select>
-
-    <button type="submit">Simpan ke Cloud</button>
-  </form>
-
-  <div class="total" id="totalKas">Total Kas: Rp 0</div>
-
-  <table id="tabelTransaksi">
-    <thead>
-      <tr>
-        <th>Tanggal</th>
-        <th>Keterangan</th>
-        <th>Jumlah</th>
-        <th>Jenis</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-
+<table id="tabelTransaksi">
+  <thead>
+    <tr>
+      <th>Tanggal</th>
+      <th>Keterangan</th>
+      <th>Jumlah</th>
+      <th>Jenis</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 <script>
-  const scriptURL = "https://script.google.com/macros/s/AKfycby5wx52W0fAgqM3Rz4dnZsmTD3AjCjzeBsrW1RQxJkMociEFypcQaR_S8-iLWTJNVij/exec"; // ganti dengan URL Web App
+const scriptURL = "https://script.google.com/macros/s/AKfycby5wx52W0fAgqM3Rz4dnZsmTD3AjCjzeBsrW1RQxJkMociEFypcQaR_S8-iLWTJNVij/exec";
 
-  document.getElementById("kasForm").addEventListener("submit", function(e) {
-    e.preventDefault(); // cegah reload halaman
+document.getElementById("kasForm").addEventListener("submit", function(e) {
+  e.preventDefault(); // cegah reload halaman
 
-    const keterangan = document.getElementById("keterangan").value;
-    const jumlah = parseInt(document.getElementById("jumlah").value);
-    const jenis = document.getElementById("jenis").value;
-    const tanggal = new Date().toLocaleDateString("id-ID");
+  const keterangan = document.getElementById("keterangan").value;
+  const jumlah = parseInt(document.getElementById("jumlah").value);
+  const jenis = document.getElementById("jenis").value;
+  const tanggal = new Date().toLocaleDateString("id-ID");
 
-    if (!keterangan || !jumlah) {
-      alert("Mohon isi semua data!");
-      return;
-    }
-
-    // Kirim ke Google Apps Script
-    fetch(scriptURL, {
-      method: "POST",
-      body: new URLSearchParams({
-        tanggal: tanggal,
-        keterangan: keterangan,
-        jumlah: jumlah,
-        jenis: jenis
-      })
-    })
-    .then(response => response.json())
-    .then(result => {
-      console.log("Data berhasil disimpan:", result);
-      loadData(); // refresh tabel setelah simpan
-      document.getElementById("kasForm").reset(); // reset form
-    })
-    .catch(error => console.error("Error:", error));
-  });
-
-  function loadData() {
-    fetch(scriptURL)
-      .then(response => response.json())
-      .then(data => {
-        const tabel = document.getElementById("tabelTransaksi").getElementsByTagName("tbody")[0];
-        tabel.innerHTML = "";
-        let totalKas = 0;
-
-        data.forEach(item => {
-          const row = tabel.insertRow();
-          row.insertCell(0).innerText = item.tanggal;
-          row.insertCell(1).innerText = item.keterangan;
-          row.insertCell(2).innerText = parseInt(item.jumlah).toLocaleString("id-ID");
-          row.insertCell(3).innerText = item.jenis;
-
-          if (item.jenis === "masuk") {
-            totalKas += parseInt(item.jumlah);
-          } else {
-            totalKas -= parseInt(item.jumlah);
-          }
-        });
-
-        document.getElementById("totalKas").innerText = "Total Kas: Rp " + totalKas.toLocaleString("id-ID");
-      })
-      .catch(error => console.error("Error load data:", error));
+  if (!keterangan || !jumlah) {
+    alert("Mohon isi semua data!");
+    return;
   }
 
-  window.onload = loadData;
-</script>
+  // Kirim ke Google Apps Script
+  fetch(scriptURL, {
+    method: "POST",
+    body: new URLSearchParams({
+      tanggal: tanggal,
+      keterangan: keterangan,
+      jumlah: jumlah,
+      jenis: jenis
+    })
+  })
+  .then(response => response.json())
+  .then(result => {
+    console.log("Data berhasil disimpan:", result);
+    loadData(); // refresh tabel setelah simpan
+    document.getElementById("kasForm").reset(); // reset form
+  })
+  .catch(error => console.error("Error:", error));
+});
+
+function loadData() {
+  fetch(scriptURL)
+    .then(response => response.json())
+    .then(data => {
+      const tabel = document.getElementById("tabelTransaksi").getElementsByTagName("tbody")[0];
+      tabel.innerHTML = "";
+      let totalKas = 0;
+
+      data.forEach(item => {
+        const row = tabel.insertRow();
+        row.insertCell(0).innerText = item.tanggal;
+        row.insertCell(1).innerText = item.keterangan;
+        row.insertCell(2).innerText = parseInt(item.jumlah).toLocaleString("id-ID");
+        row.insertCell(3).innerText = item.jenis;
+
+        // Hitung total kas
+        if (item.jenis.toLowerCase() === "masuk") {
+          totalKas += parseInt(item.jumlah);
+        } else {
+          totalKas -= parseInt(item.jumlah);
+        }
+      });
+
+      document.getElementById("totalKas").innerText = "Total Kas: Rp " + totalKas.toLocaleString("id-ID");
+    })
+    .catch(error => console.error("Error load data:", error));
+}
+
+// Panggil saat halaman pertama kali dibuka
+window.onload = loadData;
+  </script>
 </body>
 </html>
