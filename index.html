@@ -49,27 +49,43 @@
   </table>
 </div>
 <script>
-  // MASUKKAN URL WEB APP GOOGLE ANDA DI SINI
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4BegZVV0KG90CZNd3rfYr-si09bdrfeU-8usipbQw4ED0q628l9cHC4grb1asvORd/exec";
+  const WEB_APP_URL = "‎https://script.google.com/macros/s/AKfycbwg-jH144PzdLimuGwOHLCMqaZS2q-ABUi64rdqppueOOA7MhIlJ-AfBjaPwZGXgNA6Ow/exec"; // Ganti dengan URL Anda
   let totalKas = 0;
 
+  // Fungsi yang otomatis jalan saat web dibuka
   window.onload = function() {
+    muatDataDariCloud();
+  };
+
+  function muatDataDariCloud() {
+    // Reset hitungan dan bersihkan tabel agar tidak double
+    totalKas = 0;
+    const tbody = document.querySelector("#tabelTransaksi tbody");
+    tbody.innerHTML = "<tr><td colspan='4'>Memuat data...</td></tr>";
+
     fetch(WEB_APP_URL)
       .then(res => res.json())
       .then(dataLama => {
+        tbody.innerHTML = ""; // Kosongkan tulisan "memuat"
+        if (dataLama.length === 0) {
+           tbody.innerHTML = "<tr><td colspan='4'>Belum ada transaksi</td></tr>";
+        }
+        // Urutkan data jika perlu, lalu tampilkan satu per satu
         dataLama.forEach(item => {
           updateTabelUI(item.tanggal, item.keterangan, item.jumlah, item.jenis);
         });
       })
-      .catch(err => console.error("Gagal ambil data:", err));
-  };
+      .catch(err => {
+        console.error("Gagal ambil data:", err);
+        tbody.innerHTML = "<tr><td colspan='4'>Gagal memuat data</td></tr>";
+      });
+  }
 
   function prosesSimpan() {
     const btn = document.getElementById("btnSimpan");
     const ket = document.getElementById("keterangan").value;
     const jml = parseFloat(document.getElementById("jumlah").value);
     const jenis = document.getElementById("jenis").value;
-    const tanggal = new Date().toLocaleDateString("id-ID");
 
     if (!ket || isNaN(jml)) {
       alert("Isi keterangan dan jumlah dengan benar!");
@@ -87,33 +103,35 @@
     })
     .then(res => res.text())
     .then(res => {
-      updateTabelUI(tanggal, ket, jml, jenis, true);
+      alert("Data Berhasil Disimpan!");
       resetForm();
       btn.disabled = false;
-      btn.innerText = "Simpan ke Spreadsheet";
+      btn.innerText = "Simpan ke Cloud";
+      // Muat ulang data agar perhitungan Total Kas sinkron dengan database
+      muatDataDariCloud(); 
     })
     .catch(err => {
       alert("Gagal: " + err);
       btn.disabled = false;
-      btn.innerText = "Simpan ke Spreadsheet";
     });
   }
 
-  function updateTabelUI(tanggal, ket, jml, jenis, insertTop = false) {
-    if (jenis === "masuk") {
+  function updateTabelUI(tanggal, ket, jml, jenis) {
+    // Logika perhitungan matematika dasar
+    if (jenis.toLowerCase() === "masuk") {
       totalKas += jml;
     } else {
       totalKas -= jml;
     }
 
     const tbody = document.querySelector("#tabelTransaksi tbody");
-    const row = tbody.insertRow(insertTop ? 0 : -1);
+    const row = tbody.insertRow(-1); // Tambah di baris paling bawah
     
     row.innerHTML = `
       <td>${tanggal}</td>
       <td>${ket}</td>
       <td>Rp ${jml.toLocaleString("id-ID")}</td>
-      <td style="color: ${jenis === 'masuk' ? 'green' : 'red'}; font-weight:bold;">${jenis.toUpperCase()}</td>
+      <td style="color: ${jenis.toLowerCase() === 'masuk' ? 'green' : 'red'}; font-weight:bold;">${jenis.toUpperCase()}</td>
     `;
 
     document.getElementById("totalKas").innerText = "Total Kas: Rp " + totalKas.toLocaleString("id-ID");
@@ -125,6 +143,7 @@
     document.getElementById("jenis").value = "masuk";
   }
 </script>
+
 
 
 
