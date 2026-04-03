@@ -46,7 +46,7 @@
   const scriptURL = "https://script.google.com/macros/s/AKfycby5wx52W0fAgqM3Rz4dnZsmTD3AjCjzeBsrW1RQxJkMociEFypcQaR_S8-iLWTJNVij/exec";
 
 // Password sederhana untuk admin
-const adminPassword = "Colimulu"; // ganti sesuai kebutuhan
+const adminPassword = "12345"; // ganti sesuai kebutuhan
 
 function checkAdmin() {
   const inputPass = prompt("Masukkan password admin:");
@@ -62,7 +62,7 @@ document.getElementById("kasForm").addEventListener("submit", function(e) {
   const keterangan = document.getElementById("keterangan").value;
   const jumlah = parseInt(document.getElementById("jumlah").value);
   const jenis = document.getElementById("jenis").value;
-  const tanggal = new Date().toLocaleDateString("id-ID");
+  const tanggal = new Date().toISOString(); // simpan dalam format ISO agar konsisten
 
   if (!keterangan || !jumlah) {
     alert("Mohon isi semua data!");
@@ -97,7 +97,17 @@ function loadData() {
 
       data.forEach(item => {
         const row = tabel.insertRow();
-        row.insertCell(0).innerText = item.tanggal;
+
+        // Format tanggal ISO ke format lokal Indonesia (dd/mm/yyyy hh:mm)
+        let tanggalFormatted = new Date(item.tanggal).toLocaleString("id-ID", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+
+        row.insertCell(0).innerText = tanggalFormatted;
         row.insertCell(1).innerText = item.keterangan;
         row.insertCell(2).innerText = parseInt(item.jumlah).toLocaleString("id-ID");
         row.insertCell(3).innerText = item.jenis;
